@@ -41,9 +41,9 @@ namespace BitcoinService
                 if (string.IsNullOrWhiteSpace(bitcoindPath))
                 {
                     bitcoindPath = Environment.GetEnvironmentVariable("ProgramW6432");
-                    bitcoindPath += "\\Bitcoin\\daemon\\bitcoind.exe";
                 }
-                
+                bitcoindPath += "\\daemon\\bitcoind.exe";
+
                 trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("Path: '{0}'", bitcoindPath));
 
                 bitcoindProcess = new Process();
@@ -107,6 +107,11 @@ namespace BitcoinService
             {
                 trace.TraceEvent(TraceEventType.Error, 9101, string.Format("BitcoinService error stopping: {0}", arg));
             }
+        }
+
+        public void OnDebug(string[] args)
+        {
+            this.OnStart(args);
         }
     }
 }

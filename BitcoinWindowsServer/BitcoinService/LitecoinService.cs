@@ -40,8 +40,8 @@ namespace BitcoinService
                 if (string.IsNullOrWhiteSpace(litecoindPath))
                 {
                     litecoindPath = Environment.GetEnvironmentVariable("ProgramW6432");
-                    litecoindPath += "\\Litecoin\\daemon\\litecoind.exe";
                 }
+                litecoindPath += "\\daemon\\litecoind.exe";
 
                 trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("Path: '{0}'", litecoindPath));
 

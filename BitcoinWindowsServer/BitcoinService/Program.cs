@@ -93,8 +93,15 @@ namespace BitcoinService
             }
             else
             {
+#if DEBUG
+                var service = new BitcoinService();
+                service.OnDebug(new[] { @"-datadir=""D:\btcdata""" });
+#else
                 ShowHelp();
+#endif
             }
+
+
 
             //trace.TraceEvent(TraceEventType.Information, 1002, "BitcoinService Main");
             //string mainArgs = string.Join(" ", args);
