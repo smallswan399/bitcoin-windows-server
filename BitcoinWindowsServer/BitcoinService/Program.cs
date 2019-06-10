@@ -39,11 +39,15 @@ namespace BitcoinService
                     {
                         mainArgsSuffix = " " + args[1];
                     }
-                    Process.Start("sc.exe", "create bitcoind binPath=\"" + Assembly.GetExecutingAssembly().Location + mainArgsSuffix + "\" start= auto obj= \"NT AUTHORITY\\Local Service\" password= \"\" DisplayName= \"Bitcoin Service\"").WaitForExit();
-                    Process.Start("sc.exe", "config bitcoind start= delayed-auto").WaitForExit();
-                    Console.WriteLine("Service Created");
-                    Console.WriteLine("Copy bitcoin.conf to the bitcoin datadir");
-                    Console.WriteLine("Default is C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\Roaming\\Bitcoin");
+
+                    Process.Start("sc.exe",
+                            "create bitcoind binPath= \"" + Assembly.GetExecutingAssembly().Location + mainArgsSuffix +
+                            "\" start= auto obj= \"NT AUTHORITY\\Local Service\" password= \"\" DisplayName= \"Bitcoin Service\"")
+                        ?.WaitForExit();
+                    Process.Start("sc.exe", "config bitcoind start= delayed-auto")?.WaitForExit();
+                    Console.WriteLine(@"Service Created");
+                    Console.WriteLine(@"Copy bitcoin.conf to the bitcoin datadir");
+                    Console.WriteLine(@"Default is C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\Roaming\\Bitcoin");
                     return;
                 }
 
@@ -57,30 +61,34 @@ namespace BitcoinService
                     {
                         mainArgsSuffix = " " + args[1];
                     }
-                    Process.Start("sc.exe", "create litecoind binPath=\"" + Assembly.GetExecutingAssembly().Location + mainArgsSuffix + "\" start= auto obj= \"NT AUTHORITY\\Local Service\" password= \"\" DisplayName= \"Litecoin Service\"").WaitForExit();
-                    Process.Start("sc.exe", "config litecoind start= delayed-auto").WaitForExit();
-                    Console.WriteLine("Service Created");
-                    Console.WriteLine("Copy litecoin.conf to the litecoin datadir");
-                    Console.WriteLine("Default is C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\Roaming\\Litecoin");
+
+                    Process.Start("sc.exe",
+                            "create litecoind binPath= \"" + Assembly.GetExecutingAssembly().Location + mainArgsSuffix +
+                            "\" start= auto obj= \"NT AUTHORITY\\Local Service\" password= \"\" DisplayName= \"Litecoin Service\"")
+                        ?.WaitForExit();
+                    Process.Start("sc.exe", "config litecoind start= delayed-auto")?.WaitForExit();
+                    Console.WriteLine(@"Service Created");
+                    Console.WriteLine(@"Copy litecoin.conf to the litecoin datadir");
+                    Console.WriteLine(@"Default is C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\Roaming\\Litecoin");
                     return;
                 }
 
                 bool removeBitcoin = arg0.Equals("/remove-bitcoin") || arg0.Equals("-remove-bitcoin") || arg0.Equals("remove-bitcoin");
-                bool removelitecoin = arg0.Equals("/remove-litecoin") || arg0.Equals("-remove-litecoin") || arg0.Equals("remove-litecoin");
+                bool removeLitecoin = arg0.Equals("/remove-litecoin") || arg0.Equals("-remove-litecoin") || arg0.Equals("remove-litecoin");
                 if (removeBitcoin)
                 {
                     btcTrace.TraceEvent(TraceEventType.Information, 8000, "BitcoinService Remove");
-                    Process.Start("sc.exe", "stop bitcoind").WaitForExit();
-                    Process.Start("sc.exe", "delete bitcoind").WaitForExit();
-                    Console.WriteLine("Service Deleted");
+                    Process.Start("sc.exe", "stop bitcoind")?.WaitForExit();
+                    Process.Start("sc.exe", "delete bitcoind")?.WaitForExit();
+                    Console.WriteLine(@"Service Deleted");
                     return;
                 }
-                if (removelitecoin)
+                if (removeLitecoin)
                 {
                     ltcTrace.TraceEvent(TraceEventType.Information, 8000, "LitecoinService Remove");
-                    Process.Start("sc.exe", "stop litecoind").WaitForExit();
-                    Process.Start("sc.exe", "delete litecoind").WaitForExit();
-                    Console.WriteLine("Service Deleted");
+                    Process.Start("sc.exe", "stop litecoind")?.WaitForExit();
+                    Process.Start("sc.exe", "delete litecoind")?.WaitForExit();
+                    Console.WriteLine(@"Service Deleted");
                     return;
                 }
             }
