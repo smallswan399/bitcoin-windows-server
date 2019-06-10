@@ -1,4 +1,4 @@
-﻿namespace BitcoinService
+﻿namespace LitecoinService
 {
     partial class LitecoinService
     {

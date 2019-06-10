@@ -29,7 +29,7 @@ namespace BitcoinService
         {
             trace.TraceEvent(TraceEventType.Information, 1001, "BitcoinService Initialize");
             // Read bitcoindPath
-            bitcoindPath = ConfigurationManager.AppSettings["BitcoinInstallDirectory"];
+            bitcoindPath = ConfigurationManager.AppSettings["InstallDirectory"];
             InitializeComponent();
         }
 

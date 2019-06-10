@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Configuration;
-using System.Data;
 using System.Diagnostics;
-using System.Linq;
 using System.ServiceProcess;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BitcoinService
+namespace LitecoinService
 {
     partial class LitecoinService : ServiceBase
     {
@@ -28,7 +22,7 @@ namespace BitcoinService
         {
             trace.TraceEvent(TraceEventType.Information, 1001, "LitecoinService Initialize");
             // Read LitecoindPath
-            litecoindPath = ConfigurationManager.AppSettings["LitcoinInstallDirectory"];
+            litecoindPath = ConfigurationManager.AppSettings["InstallDirectory"];
             InitializeComponent();
         }
 
