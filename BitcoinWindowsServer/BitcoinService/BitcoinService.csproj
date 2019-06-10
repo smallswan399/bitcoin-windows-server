@@ -34,6 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -50,11 +51,22 @@
     <Compile Include="BitcoinService.Designer.cs">
       <DependentUpon>BitcoinService.cs</DependentUpon>
     </Compile>
+    <Compile Include="LitecoinService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="LitecoinService.Designer.cs">
+      <DependentUpon>LitecoinService.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="LitecoinService.resx">
+      <DependentUpon>LitecoinService.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

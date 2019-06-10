@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
@@ -27,6 +28,8 @@ namespace BitcoinService
         public BitcoinService()
         {
             trace.TraceEvent(TraceEventType.Information, 1001, "BitcoinService Initialize");
+            // Read bitcoindPath
+            bitcoindPath = ConfigurationManager.AppSettings["BitcoinInstallDirectory"];
             InitializeComponent();
         }
 
@@ -35,8 +38,12 @@ namespace BitcoinService
             trace.TraceEvent(TraceEventType.Information, 1100, "BitcoinService Starting");
             try
             {
-                bitcoindPath = Environment.GetEnvironmentVariable("ProgramW6432");
-                bitcoindPath += "\\Bitcoin\\daemon\\bitcoind.exe";
+                if (string.IsNullOrWhiteSpace(bitcoindPath))
+                {
+                    bitcoindPath = Environment.GetEnvironmentVariable("ProgramW6432");
+                    bitcoindPath += "\\Bitcoin\\daemon\\bitcoind.exe";
+                }
+                
                 trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("Path: '{0}'", bitcoindPath));
 
                 bitcoindProcess = new Process();
