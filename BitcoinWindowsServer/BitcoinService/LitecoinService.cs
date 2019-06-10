@@ -43,12 +43,12 @@ namespace BitcoinService
                 }
                 litecoindPath += "\\daemon\\litecoind.exe";
 
-                trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("Path: '{0}'", litecoindPath));
+                trace.TraceEvent(TraceEventType.Verbose, 0, $"Path: '{litecoindPath}'");
 
                 litecoindProcess = new Process();
                 litecoindProcess.StartInfo = new ProcessStartInfo(litecoindPath);
                 string startArgs = string.Join(" ", args);
-                trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("StartArgs: '{0}'", startArgs));
+                trace.TraceEvent(TraceEventType.Verbose, 0, $"StartArgs: '{startArgs}'");
 
                 if (!string.IsNullOrEmpty(startArgs))
                 {
@@ -61,17 +61,17 @@ namespace BitcoinService
                     litecoindProcess.StartInfo.Arguments = MainArgs;
                 }
 
-                litecoindProcess.ErrorDataReceived += new DataReceivedEventHandler(Litecoind_ErrorDataReceived);
-                litecoindProcess.OutputDataReceived += new DataReceivedEventHandler(Litecoind_OutputDataReceived);
-                litecoindProcess.Exited += new EventHandler(Litecoind_Exited);
+                litecoindProcess.ErrorDataReceived += Litecoind_ErrorDataReceived;
+                litecoindProcess.OutputDataReceived += Litecoind_OutputDataReceived;
+                litecoindProcess.Exited += Litecoind_Exited;
                 litecoindProcess.EnableRaisingEvents = true;
 
                 bool started = litecoindProcess.Start();
-                trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("Started: {0}", started));
+                trace.TraceEvent(TraceEventType.Verbose, 0, $"Started: {started}");
             }
             catch (Exception ex)
             {
-                trace.TraceEvent(TraceEventType.Error, 9100, string.Format("LitecoinService error starting: {0}", ex));
+                trace.TraceEvent(TraceEventType.Error, 9100, $"LitecoinService error starting: {ex}");
             }
         }
 
@@ -84,28 +84,29 @@ namespace BitcoinService
                 // Process.Start(LitecoindPath, "stop");
                 litecoindProcess.Kill();
                 bool exited = litecoindProcess.WaitForExit(60000);
-                trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("Litecoin exit code: {0}", exited ? litecoindProcess.ExitCode.ToString() : exited.ToString()));
+                trace.TraceEvent(TraceEventType.Verbose, 0,
+                    $"Litecoin exit code: {(exited ? litecoindProcess.ExitCode.ToString() : exited.ToString())}");
             }
             catch (Exception arg)
             {
-                trace.TraceEvent(TraceEventType.Error, 9101, string.Format("LitecoinService error stopping: {0}", arg));
+                trace.TraceEvent(TraceEventType.Error, 9101, $"LitecoinService error stopping: {arg}");
             }
         }
 
         private void Litecoind_Exited(object sender, EventArgs eventArgs)
         {
             int exitCode = litecoindProcess.ExitCode;
-            trace.TraceEvent(TraceEventType.Verbose, 3, string.Format("EXITED: {0}", exitCode));
+            trace.TraceEvent(TraceEventType.Verbose, 3, $"EXITED: {exitCode}");
         }
 
         private void Litecoind_OutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
-            trace.TraceEvent(TraceEventType.Verbose, 1, string.Format("OUT: {0}", eventArgs.Data));
+            trace.TraceEvent(TraceEventType.Verbose, 1, $"OUT: {eventArgs.Data}");
         }
 
         private void Litecoind_ErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
-            trace.TraceEvent(TraceEventType.Warning, 2, string.Format("ERROR: {0}", eventArgs.Data));
+            trace.TraceEvent(TraceEventType.Warning, 2, $"ERROR: {eventArgs.Data}");
         }
 
     }

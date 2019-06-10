@@ -44,12 +44,11 @@ namespace BitcoinService
                 }
                 bitcoindPath += "\\daemon\\bitcoind.exe";
 
-                trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("Path: '{0}'", bitcoindPath));
+                trace.TraceEvent(TraceEventType.Verbose, 0, $"Path: '{bitcoindPath}'");
 
-                bitcoindProcess = new Process();
-                bitcoindProcess.StartInfo = new ProcessStartInfo(bitcoindPath);
+                bitcoindProcess = new Process {StartInfo = new ProcessStartInfo(bitcoindPath)};
                 string startArgs = string.Join(" ", args);
-                trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("StartArgs: '{0}'", startArgs));
+                trace.TraceEvent(TraceEventType.Verbose, 0, $"StartArgs: '{startArgs}'");
 
                 if (!string.IsNullOrEmpty(startArgs))
                 {
@@ -62,34 +61,34 @@ namespace BitcoinService
                     bitcoindProcess.StartInfo.Arguments = MainArgs;
                 }
 
-                bitcoindProcess.ErrorDataReceived += new DataReceivedEventHandler(Bitcoind_ErrorDataReceived);
-                bitcoindProcess.OutputDataReceived += new DataReceivedEventHandler(Bitcoind_OutputDataReceived);
-                bitcoindProcess.Exited += new EventHandler(Bitcoind_Exited);
+                bitcoindProcess.ErrorDataReceived += Bitcoind_ErrorDataReceived;
+                bitcoindProcess.OutputDataReceived += Bitcoind_OutputDataReceived;
+                bitcoindProcess.Exited += Bitcoind_Exited;
                 bitcoindProcess.EnableRaisingEvents = true;
 
                 bool started = bitcoindProcess.Start();
-                trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("Started: {0}", started));
+                trace.TraceEvent(TraceEventType.Verbose, 0, $"Started: {started}");
             }
             catch (Exception ex)
             {
-                trace.TraceEvent(TraceEventType.Error, 9100, string.Format("BitcoinService error starting: {0}", ex));
+                trace.TraceEvent(TraceEventType.Error, 9100, $"BitcoinService error starting: {ex}");
             }
         }
 
         private void Bitcoind_Exited(object sender, EventArgs eventArgs)
         {
             int exitCode = bitcoindProcess.ExitCode;
-            trace.TraceEvent(TraceEventType.Verbose, 3, string.Format("EXITED: {0}", exitCode));
+            trace.TraceEvent(TraceEventType.Verbose, 3, $"EXITED: {exitCode}");
         }
 
         private void Bitcoind_OutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
-            trace.TraceEvent(TraceEventType.Verbose, 1, string.Format("OUT: {0}", eventArgs.Data));
+            trace.TraceEvent(TraceEventType.Verbose, 1, $"OUT: {eventArgs.Data}");
         }
 
         private void Bitcoind_ErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
-            trace.TraceEvent(TraceEventType.Warning, 2, string.Format("ERROR: {0}", eventArgs.Data));
+            trace.TraceEvent(TraceEventType.Warning, 2, $"ERROR: {eventArgs.Data}");
         }
 
         protected override void OnStop()
@@ -101,11 +100,12 @@ namespace BitcoinService
                 // Process.Start(bitcoindPath, "stop");
                 bitcoindProcess.Kill();
                 bool exited = bitcoindProcess.WaitForExit(60000);
-                trace.TraceEvent(TraceEventType.Verbose, 0, string.Format("Bitcoin exit code: {0}", exited ? bitcoindProcess.ExitCode.ToString() : exited.ToString()));
+                trace.TraceEvent(TraceEventType.Verbose, 0,
+                    $"Bitcoin exit code: {(exited ? bitcoindProcess.ExitCode.ToString() : exited.ToString())}");
             }
             catch (Exception arg)
             {
-                trace.TraceEvent(TraceEventType.Error, 9101, string.Format("BitcoinService error stopping: {0}", arg));
+                trace.TraceEvent(TraceEventType.Error, 9101, $"BitcoinService error stopping: {arg}");
             }
         }
 
