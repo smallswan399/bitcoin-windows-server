@@ -30,7 +30,6 @@ namespace BitcoinService
                 }
 
                 bool installBitcoin = arg0.Equals("/install-bitcoin") || arg0.Equals("-install-bitcoin") || arg0.Equals("install-bitcoin");
-                bool installLitecoin = arg0.Equals("/install-litecoin") || arg0.Equals("-install-litecoin") || arg0.Equals("install-litecoin");
                 if (installBitcoin)
                 {
                     btcTrace.TraceEvent(TraceEventType.Information, 1000, "BitcoinService Install");
@@ -48,6 +47,7 @@ namespace BitcoinService
                     return;
                 }
 
+                bool installLitecoin = arg0.Equals("/install-litecoin") || arg0.Equals("-install-litecoin") || arg0.Equals("install-litecoin");
                 if (installLitecoin)
                 {
                     ltcTrace.TraceEvent(TraceEventType.Information, 1000, "LitecoinService Install");
@@ -57,7 +57,7 @@ namespace BitcoinService
                     {
                         mainArgsSuffix = " " + args[1];
                     }
-                    Process.Start("sc.exe", "create litecoind binPath=\"" + Assembly.GetExecutingAssembly().Location + mainArgsSuffix + "\" start= auto obj= \"NT AUTHORITY\\Local Service\" password= \"\" DisplayName= \"Bitcoin Service\"").WaitForExit();
+                    Process.Start("sc.exe", "create litecoind binPath=\"" + Assembly.GetExecutingAssembly().Location + mainArgsSuffix + "\" start= auto obj= \"NT AUTHORITY\\Local Service\" password= \"\" DisplayName= \"Litecoin Service\"").WaitForExit();
                     Process.Start("sc.exe", "config litecoind start= delayed-auto").WaitForExit();
                     Console.WriteLine("Service Created");
                     Console.WriteLine("Copy litecoin.conf to the litecoin datadir");
