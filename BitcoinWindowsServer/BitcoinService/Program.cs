@@ -11,8 +11,7 @@ namespace BitcoinService
 {
     static class Program
     {
-        private static TraceSource btcTrace = new TraceSource("BitcoinService");
-        private static TraceSource ltcTrace = new TraceSource("LitecoinService");
+        private static TraceSource trace = new TraceSource("BitcoinService");
 
         static void Main(string[] args)
         {
@@ -32,7 +31,7 @@ namespace BitcoinService
                 bool installBitcoin = arg0.Equals("/install-bitcoin") || arg0.Equals("-install-bitcoin") || arg0.Equals("install-bitcoin");
                 if (installBitcoin)
                 {
-                    btcTrace.TraceEvent(TraceEventType.Information, 1000, "BitcoinService Install");
+                    trace.TraceEvent(TraceEventType.Information, 1000, "BitcoinService Install");
                     string mainArgsSuffix = string.Empty;
                     bool hasMainArgs = args.Length > 1;
                     if (hasMainArgs)
@@ -54,7 +53,7 @@ namespace BitcoinService
                 bool installLitecoin = arg0.Equals("/install-litecoin") || arg0.Equals("-install-litecoin") || arg0.Equals("install-litecoin");
                 if (installLitecoin)
                 {
-                    ltcTrace.TraceEvent(TraceEventType.Information, 1000, "LitecoinService Install");
+                    trace.TraceEvent(TraceEventType.Information, 1000, "LitecoinService Install");
                     string mainArgsSuffix = string.Empty;
                     bool hasMainArgs = args.Length > 1;
                     if (hasMainArgs)
@@ -77,7 +76,7 @@ namespace BitcoinService
                 bool removeLitecoin = arg0.Equals("/remove-litecoin") || arg0.Equals("-remove-litecoin") || arg0.Equals("remove-litecoin");
                 if (removeBitcoin)
                 {
-                    btcTrace.TraceEvent(TraceEventType.Information, 8000, "BitcoinService Remove");
+                    trace.TraceEvent(TraceEventType.Information, 8000, "BitcoinService Remove");
                     Process.Start("sc.exe", "stop bitcoind")?.WaitForExit();
                     Process.Start("sc.exe", "delete bitcoind")?.WaitForExit();
                     Console.WriteLine(@"Service Deleted");
@@ -85,7 +84,7 @@ namespace BitcoinService
                 }
                 if (removeLitecoin)
                 {
-                    ltcTrace.TraceEvent(TraceEventType.Information, 8000, "LitecoinService Remove");
+                    trace.TraceEvent(TraceEventType.Information, 8000, "LitecoinService Remove");
                     Process.Start("sc.exe", "stop litecoind")?.WaitForExit();
                     Process.Start("sc.exe", "delete litecoind")?.WaitForExit();
                     Console.WriteLine(@"Service Deleted");
@@ -112,14 +111,14 @@ namespace BitcoinService
 
         private static void ShowHelp()
         {
-            Console.WriteLine("Bitcoin Windows Service");
-            Console.WriteLine("");
-            Console.WriteLine(".\\BitcoinService.exe /install [\"service_args\"]");
-            Console.WriteLine("  Installs the Windows Service 'bitcoind', to run with the given arguments");
-            Console.WriteLine("  e.g. .\\BitcoinService.exe /install \"-datadir=F:\\Bitcoin\"");
-            Console.WriteLine("");
-            Console.WriteLine(".\\BitcoinService.exe /remove");
-            Console.WriteLine("  Removes the Windows Service");
+            Console.WriteLine(@"Bitcoin Windows Service");
+            Console.WriteLine(@"");
+            Console.WriteLine(@".\BitcoinService.exe /install [""service_args""]");
+            Console.WriteLine(@"  Installs the Windows Service 'bitcoind', to run with the given arguments");
+            Console.WriteLine(@"  e.g. .\BitcoinService.exe /install ""-datadir=F:\Bitcoin""");
+            Console.WriteLine(@"");
+            Console.WriteLine(@".\BitcoinService.exe /remove");
+            Console.WriteLine(@"  Removes the Windows Service");
             return;
         }
     }
