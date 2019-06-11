@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.IO;
 using System.ServiceProcess;
-using System.Text;
-using System.Threading.Tasks;
+using Serilog;
 
 namespace LitecoinService
 {
@@ -14,12 +11,19 @@ namespace LitecoinService
         /// </summary>
         static void Main()
         {
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[]
+            var dir = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            dir = System.IO.Path.GetDirectoryName(dir);
+            var file = Path.Combine(dir, "log-{Date}.txt");
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo
+                .RollingFile(file, retainedFileCountLimit: 30)
+                .CreateLogger();
+            var servicesToRun = new ServiceBase[]
             {
                 new LitecoinService()
             };
-            ServiceBase.Run(ServicesToRun);
+            ServiceBase.Run(servicesToRun);
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿$dataDir = "D:\btcdata"
-$localtion = $PSScriptRoot
+﻿$localtion = $PSScriptRoot
 $exePath = Join-Path -Path $localtion -ChildPath "BitcoinService.exe"
-$binaryPath = $exePath + " -datadir=" + $dataDir
+$binaryPath = $exePath
 New-Service -Name "bitcoind" -BinaryPathName $binaryPath -DisplayName "Bitcoin service" -Description "Bitcoin deamon service" -StartupType Automatic -Credential "NT AUTHORITY\LOCAL SERVICE"

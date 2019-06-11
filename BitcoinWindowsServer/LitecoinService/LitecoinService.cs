@@ -1,107 +1,126 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Configuration;
 using System.Diagnostics;
+using System.IO;
 using System.ServiceProcess;
+using System.Threading;
 
 namespace LitecoinService
 {
     partial class LitecoinService : ServiceBase
     {
-        private TraceSource trace = new TraceSource("LitcoinService");
+        private Process _litecoindProcess;
 
-        private Process litecoindProcess;
+        private readonly string _litecoindPath;
+        private readonly string _cliPath;
+        private readonly string _dataDir;
 
-        private string litecoindPath;
-
-        public string MainArgs
-        {
-            get;
-            set;
-        }
         public LitecoinService()
         {
-            trace.TraceEvent(TraceEventType.Information, 1001, "LitecoinService Initialize");
-            // Read LitecoindPath
-            litecoindPath = ConfigurationManager.AppSettings["InstallDirectory"];
+            var installDir = ConfigurationManager.AppSettings["InstallDirectory"];
+            if (string.IsNullOrWhiteSpace(installDir)) installDir = Environment.GetEnvironmentVariable("ProgramW6432");
+            if (string.IsNullOrWhiteSpace(installDir))
+                throw new Exception();
+            _litecoindPath = Path.Combine(installDir, "daemon\\litecoind.exe");
+            if (!File.Exists(_litecoindPath))
+                throw new FileNotFoundException(null, _litecoindPath);
+
+            _cliPath = Path.Combine(installDir, "daemon\\litecoin-cli.exe");
+            if (!File.Exists(_cliPath))
+                throw new FileNotFoundException(null, _cliPath);
+
+            _dataDir = GetDataDir();
             InitializeComponent();
+        }
+
+        private string GetDataDir()
+        {
+            var dataDir = ConfigurationManager.AppSettings["DataDir"];
+            if (string.IsNullOrWhiteSpace(dataDir) || HasWhiteSpace(dataDir))
+            {
+                throw new Exception("Invalid datadir");
+            }
+
+            return dataDir;
+        }
+
+        private string GetArgs()
+        {
+            return $"-datadir={_dataDir}";
+        }
+
+
+        private bool HasWhiteSpace(string s)
+        {
+            if (s == null)
+                throw new ArgumentNullException("s");
+
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (char.IsWhiteSpace(s[i]))
+                    return true;
+            }
+            return false;
         }
 
         protected override void OnStart(string[] args)
         {
-            trace.TraceEvent(TraceEventType.Information, 1100, "LitecoinService Starting");
             try
             {
-                if (string.IsNullOrWhiteSpace(litecoindPath))
+                var startArgs = GetArgs();
+                _litecoindProcess = new Process
                 {
-                    litecoindPath = Environment.GetEnvironmentVariable("ProgramW6432");
-                }
-                litecoindPath += "\\daemon\\litecoind.exe";
+                    StartInfo = new ProcessStartInfo(_litecoindPath, startArgs)
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true
+                    }
+                };
 
-                trace.TraceEvent(TraceEventType.Verbose, 0, $"Path: '{litecoindPath}'");
+                _litecoindProcess.OutputDataReceived += Litecoind_OutputDataReceived;
+                _litecoindProcess.Exited += Litecoind_Exited;
+                _litecoindProcess.EnableRaisingEvents = true;
 
-                litecoindProcess = new Process();
-                litecoindProcess.StartInfo = new ProcessStartInfo(litecoindPath);
-                string startArgs = string.Join(" ", args);
-                trace.TraceEvent(TraceEventType.Verbose, 0, $"StartArgs: '{startArgs}'");
-
-                if (!string.IsNullOrEmpty(startArgs))
-                {
-                    trace.TraceEvent(TraceEventType.Verbose, 0, "Using startArgs");
-                    litecoindProcess.StartInfo.Arguments = startArgs;
-                }
-                else if (!string.IsNullOrEmpty(MainArgs))
-                {
-                    trace.TraceEvent(TraceEventType.Verbose, 0, "Using MainArgs");
-                    litecoindProcess.StartInfo.Arguments = MainArgs;
-                }
-
-                litecoindProcess.ErrorDataReceived += Litecoind_ErrorDataReceived;
-                litecoindProcess.OutputDataReceived += Litecoind_OutputDataReceived;
-                litecoindProcess.Exited += Litecoind_Exited;
-                litecoindProcess.EnableRaisingEvents = true;
-
-                bool started = litecoindProcess.Start();
-                trace.TraceEvent(TraceEventType.Verbose, 0, $"Started: {started}");
+                _litecoindProcess.Start();
+                _litecoindProcess.BeginOutputReadLine();
             }
             catch (Exception ex)
             {
-                trace.TraceEvent(TraceEventType.Error, 9100, $"LitecoinService error starting: {ex}");
+                Log.Error(ex, "LitecoinService error starting");
             }
         }
 
         protected override void OnStop()
         {
-            trace.TraceEvent(TraceEventType.Information, 8100, "LitecoinService Stopping");
             try
             {
-                // This no longer seems to work, due to security issues
-                // Process.Start(LitecoindPath, "stop");
-                litecoindProcess.Kill();
-                bool exited = litecoindProcess.WaitForExit(60000);
-                trace.TraceEvent(TraceEventType.Verbose, 0,
-                    $"Litecoin exit code: {(exited ? litecoindProcess.ExitCode.ToString() : exited.ToString())}");
+                Process.Start(_cliPath, GetArgs() + " stop")?.WaitForExit();
+                while (!_litecoindProcess.HasExited)
+                {
+                    Thread.Sleep(500);
+                }
             }
             catch (Exception arg)
             {
-                trace.TraceEvent(TraceEventType.Error, 9101, $"LitecoinService error stopping: {arg}");
+                Log.Error(arg, "LitecoinService error stopping");
             }
         }
 
         private void Litecoind_Exited(object sender, EventArgs eventArgs)
         {
-            int exitCode = litecoindProcess.ExitCode;
-            trace.TraceEvent(TraceEventType.Verbose, 3, $"EXITED: {exitCode}");
+            int exitCode = _litecoindProcess.ExitCode;
+            Log.Verbose("EXITED: {exitCode}", exitCode);
         }
 
         private void Litecoind_OutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
-            trace.TraceEvent(TraceEventType.Verbose, 1, $"OUT: {eventArgs.Data}");
+            Log.Verbose("OUT: {data}", eventArgs.Data);
         }
 
         private void Litecoind_ErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
-            trace.TraceEvent(TraceEventType.Warning, 2, $"ERROR: {eventArgs.Data}");
+            //_trace.TraceEvent(TraceEventType.Warning, 2, $"ERROR: {eventArgs.Data}");
         }
-
     }
 }

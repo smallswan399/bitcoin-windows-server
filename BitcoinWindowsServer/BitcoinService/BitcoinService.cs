@@ -1,117 +1,130 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Configuration;
-using System.Data;
 using System.Diagnostics;
-using System.Linq;
+using System.IO;
 using System.ServiceProcess;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
+using Serilog;
 
 namespace BitcoinService
 {
     public partial class BitcoinService : ServiceBase
     {
-        private TraceSource trace = new TraceSource("BitcoinService");
+        private Process _bitcoindProcess;
 
-        private Process bitcoindProcess;
-
-        private string bitcoindPath;
-
-        public string MainArgs
-        {
-            get;
-            set;
-        }
+        private readonly string _bitcoindPath;
+        private readonly string _cliPath;
+        private readonly string _dataDir;
 
         public BitcoinService()
         {
-            trace.TraceEvent(TraceEventType.Information, 1001, "BitcoinService Initialize");
-            // Read bitcoindPath
-            bitcoindPath = ConfigurationManager.AppSettings["InstallDirectory"];
+            var installDir = ConfigurationManager.AppSettings["InstallDirectory"];
+            if (string.IsNullOrWhiteSpace(installDir)) installDir = Environment.GetEnvironmentVariable("ProgramW6432");
+            if (string.IsNullOrWhiteSpace(installDir))
+                throw new Exception();
+            _bitcoindPath = Path.Combine(installDir, "daemon\\bitcoind.exe");
+            if (!File.Exists(_bitcoindPath))
+                throw new FileNotFoundException(null, _bitcoindPath);
+
+            _cliPath = Path.Combine(installDir, "daemon\\bitcoin-cli.exe");
+            if (!File.Exists(_cliPath))
+                throw new FileNotFoundException(null, _cliPath);
+
+            _dataDir = GetDataDir();
             InitializeComponent();
+        }
+
+        private string GetDataDir()
+        {
+            var dataDir = ConfigurationManager.AppSettings["DataDir"];
+            if (string.IsNullOrWhiteSpace(dataDir) || HasWhiteSpace(dataDir))
+            {
+                throw new Exception("Invalid datadir");
+            }
+
+            return dataDir;
         }
 
         protected override void OnStart(string[] args)
         {
-            trace.TraceEvent(TraceEventType.Information, 1100, "BitcoinService Starting");
             try
             {
-                if (string.IsNullOrWhiteSpace(bitcoindPath))
+                var startArgs = GetArgs();
+                _bitcoindProcess = new Process
                 {
-                    bitcoindPath = Environment.GetEnvironmentVariable("ProgramW6432");
-                }
-                bitcoindPath += "\\daemon\\bitcoind.exe";
+                    StartInfo = new ProcessStartInfo(_bitcoindPath, startArgs)
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true
+                    }
+                };
+                _bitcoindProcess.OutputDataReceived += Bitcoind_OutputDataReceived;
+                _bitcoindProcess.Exited += Bitcoind_Exited;
+                _bitcoindProcess.EnableRaisingEvents = true;
 
-                trace.TraceEvent(TraceEventType.Verbose, 0, $"Path: '{bitcoindPath}'");
-
-                bitcoindProcess = new Process {StartInfo = new ProcessStartInfo(bitcoindPath)};
-                string startArgs = string.Join(" ", args);
-                trace.TraceEvent(TraceEventType.Verbose, 0, $"StartArgs: '{startArgs}'");
-
-                if (!string.IsNullOrEmpty(startArgs))
-                {
-                    trace.TraceEvent(TraceEventType.Verbose, 0, "Using startArgs");
-                    bitcoindProcess.StartInfo.Arguments = startArgs;
-                }
-                else if (!string.IsNullOrEmpty(MainArgs))
-                {
-                    trace.TraceEvent(TraceEventType.Verbose, 0, "Using MainArgs");
-                    bitcoindProcess.StartInfo.Arguments = MainArgs;
-                }
-
-                bitcoindProcess.ErrorDataReceived += Bitcoind_ErrorDataReceived;
-                bitcoindProcess.OutputDataReceived += Bitcoind_OutputDataReceived;
-                bitcoindProcess.Exited += Bitcoind_Exited;
-                bitcoindProcess.EnableRaisingEvents = true;
-
-                bool started = bitcoindProcess.Start();
-                trace.TraceEvent(TraceEventType.Verbose, 0, $"Started: {started}");
+                _bitcoindProcess.Start();
+                _bitcoindProcess.BeginOutputReadLine();
             }
             catch (Exception ex)
             {
-                trace.TraceEvent(TraceEventType.Error, 9100, $"BitcoinService error starting: {ex}");
+                Log.Error(ex, "BitcoinService error starting");
             }
+        }
+
+        public void Start()
+        {
+            OnStart(new string[0]);
         }
 
         private void Bitcoind_Exited(object sender, EventArgs eventArgs)
         {
-            int exitCode = bitcoindProcess.ExitCode;
-            trace.TraceEvent(TraceEventType.Verbose, 3, $"EXITED: {exitCode}");
+            int exitCode = _bitcoindProcess.ExitCode;
+            Log.Verbose("EXITED: {exitCode}", exitCode);
         }
 
         private void Bitcoind_OutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
-            trace.TraceEvent(TraceEventType.Verbose, 1, $"OUT: {eventArgs.Data}");
+            Log.Verbose("OUT: {data}", eventArgs.Data);
+            //_trace.TraceEvent(TraceEventType.Verbose, 1, $"OUT: {eventArgs.Data}");
         }
 
         private void Bitcoind_ErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
-            trace.TraceEvent(TraceEventType.Warning, 2, $"ERROR: {eventArgs.Data}");
+            //_trace.TraceEvent(TraceEventType.Warning, 2, $"ERROR: {eventArgs.Data}");
         }
 
         protected override void OnStop()
         {
-            trace.TraceEvent(TraceEventType.Information, 8100, "BitcoinService Stopping");
             try
             {
-                // This no longer seems to work, due to security issues
-                // Process.Start(bitcoindPath, "stop");
-                bitcoindProcess.Kill();
-                bool exited = bitcoindProcess.WaitForExit(60000);
-                trace.TraceEvent(TraceEventType.Verbose, 0,
-                    $"Bitcoin exit code: {(exited ? bitcoindProcess.ExitCode.ToString() : exited.ToString())}");
+                Process.Start(_cliPath, GetArgs() + " stop")?.WaitForExit();
+                while (!_bitcoindProcess.HasExited)
+                {
+                    Thread.Sleep(500);
+                }
             }
             catch (Exception arg)
             {
-                trace.TraceEvent(TraceEventType.Error, 9101, $"BitcoinService error stopping: {arg}");
+                Log.Error(arg, "BitcoinService error stopping");
             }
         }
 
-        public void OnDebug(string[] args)
+        private string GetArgs()
         {
-            this.OnStart(args);
+            return $"-datadir={_dataDir}";
+        }
+
+        private bool HasWhiteSpace(string s)
+        {
+            if (s == null)
+                throw new ArgumentNullException("s");
+
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (char.IsWhiteSpace(s[i]))
+                    return true;
+            }
+            return false;
         }
     }
 }

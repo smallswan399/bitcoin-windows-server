@@ -1,4 +1,7 @@
-﻿using System.ServiceProcess;
+﻿using System.IO;
+using System.ServiceProcess;
+using System.Threading;
+using Serilog;
 
 namespace BitcoinService
 {
@@ -9,12 +12,19 @@ namespace BitcoinService
         /// </summary>
         static void Main()
         {
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[]
+            var dir = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            dir = System.IO.Path.GetDirectoryName(dir);
+            var file = Path.Combine(dir, "log-{Date}.txt");
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo
+                .RollingFile(file, retainedFileCountLimit: 30)
+                .CreateLogger();
+            var servicesToRun = new ServiceBase[]
             {
                 new BitcoinService()
             };
-            ServiceBase.Run(ServicesToRun);
+            ServiceBase.Run(servicesToRun);
         }
     }
 }
